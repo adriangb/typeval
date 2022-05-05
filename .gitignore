@@ -1,0 +1,16 @@
+/*
+
+!/.gitignore
+!/.flake8
+!/.pre-commit-config.yaml
+!/typeval/
+!/tests/
+!/Makefile
+!/pyproject.toml
+!/poetry.lock
+!/README.md
+!/LICENSE.txt
+!/rust-toolchain
+
+**/__pycache__
+**/.DS_Store

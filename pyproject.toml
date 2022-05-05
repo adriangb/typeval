@@ -1,0 +1,24 @@
+[tool.poetry]
+name = "typeval"
+version = "0.1.0"
+description = "Prototype of annotated-types + pydantic-core"
+authors = ["Adrian Garcia Badaracco <1755071+adriangb@users.noreply.github.com>"]
+license = "MIT"
+
+[tool.poetry.dependencies]
+python = "^3.7"
+annotated-types = {git = "https://github.com/annotated-types/annotated-types.git", branch = "main"}
+pydantic-core = {git = "https://github.com/samuelcolvin/pydantic-core.git", branch = "main"}
+typing-extensions = {version = "^4.0.0", python = "<=3.9.0"}
+
+[tool.poetry.dev-dependencies]
+pytest = "^7.1.2"
+pre-commit = "^2.18.1"
+black = "^22.3.0"
+mypy = "^0.950"
+flake8 = "^4.0.1"
+isort = "^5.10.1"
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
