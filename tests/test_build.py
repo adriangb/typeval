@@ -19,6 +19,9 @@ def test_build_validator() -> None:
     assert validator.validate_python({"a_list": [1], "a_union": 101}) == MyModel(
         [1.0], 101.0
     )
+    assert validator.validate_python({"a_list": [1], "a_union": 99}) == MyModel(
+        [1.0], 99
+    )
 
 
 def test_build_validator_nested() -> None:
