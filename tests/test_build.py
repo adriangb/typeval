@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import Annotated, Any, Dict, List, Set, Union, Optional
+from typing import Annotated, Any, Dict, List, Optional, Set, Union
 
 import annotated_types as at
 import pytest
@@ -13,13 +13,12 @@ def test_scalars() -> None:
         a_float: Annotated[float, at.Ge(0), at.Lt(100)]
         an_int: Annotated[int, at.Ge(0), at.Lt(100)]
         a_bool: bool
-        a_string: Annotated[str, at.Regex(r"^foo$")]
         a_none: None
 
     validator = build_validator(MyModel)
     assert validator.validate_python(
-        {"a_float": 1, "an_int": 0, "a_bool": "True", "a_string": "foo", "a_none": None}
-    ) == MyModel(1.0, 0, True, "foo", None)
+        {"a_float": 1, "an_int": 0, "a_bool": "True", "a_none": None}
+    ) == MyModel(1.0, 0, True, None)
 
 
 def test_any() -> None:
@@ -113,9 +112,7 @@ def test_nested_validators() -> None:
         a_strange_list: Annotated[
             List[
                 Annotated[
-                    Dict[
-                        Annotated[float, at.Ge(0)], Annotated[str, at.Regex(r"^foo$")]
-                    ],
+                    Dict[Annotated[float, at.Ge(0)], Annotated[str, at.Len(3, 3)]],
                     at.Len(0, 1),
                 ]
             ],
@@ -140,16 +137,16 @@ def test_nested_validators() -> None:
     # float negative
     with pytest.raises(ValidationError):
         validator.validate_python({"a_strange_list": [{-1: "foo"}]})
-    # regex does not match
+    # string length too long
     with pytest.raises(ValidationError):
-        validator.validate_python({"a_strange_list": [{1: "bar"}]})
+        validator.validate_python({"a_strange_list": [{1: "foo foo"}]})
 
 
 def test_validation_failure() -> None:
     @dataclass
     class MyModel:
-        foo: Annotated[str, at.Regex(r"^abc$")]
+        foo: Annotated[str, at.Len(1)]
 
     validator = build_validator(MyModel)
     with pytest.raises(ValidationError):
-        validator.validate_python({"foo": "abcd"})
+        validator.validate_python({"foo": ""})

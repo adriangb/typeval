@@ -7,7 +7,7 @@ license = "MIT"
 
 [tool.poetry.dependencies]
 python = "^3.7"
-annotated-types = {git = "https://github.com/annotated-types/annotated-types.git", branch = "main"}
+annotated-types = ">=0.2.0"
 pydantic-core = {git = "https://github.com/samuelcolvin/pydantic-core.git", branch = "main"}
 typing-extensions = {version = "^4.0.0", python = "<=3.9.0"}
 

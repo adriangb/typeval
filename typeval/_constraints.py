@@ -30,11 +30,6 @@ def _compile_multiple_of(constraint: at.BaseMetadata) -> CompiledConstraint:
     return {"multiple_of": constraint.multiple_of}
 
 
-def _compile_regex(constraint: at.BaseMetadata) -> CompiledConstraint:
-    assert isinstance(constraint, at.Regex)
-    return {"pattern": constraint.regex_pattern}
-
-
 def _compile_len(constraint: at.BaseMetadata) -> CompiledConstraint:
     assert isinstance(constraint, at.Len)
     res = {"min_length": constraint.min_inclusive}
@@ -64,7 +59,6 @@ _KNOWN_CONSTRAINTS: Dict[
     at.Gt: _compile_gt,
     at.Len: _compile_len,
     at.MultipleOf: _compile_multiple_of,
-    at.Regex: _compile_regex,
     at.Predicate: _compile_predicate,
 }
 
