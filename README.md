@@ -23,16 +23,20 @@ class Classroom:
     teacher: Name
     students: Students
 
-
-validator = Validator(Classroom)
-
-instance = validator.validate_python(
+classroom = Validator(Classroom).validate_python(
     {
         "teacher": "Foo Bar",
         "students": {
             "Fizz": 3,
             "Buzz": 5,
         }
+    }
+)
+
+students = Validator(Students).validate_python(
+    {
+        "Fizz": 3,
+        "Buzz": 5,
     }
 )
 ```
