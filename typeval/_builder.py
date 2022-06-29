@@ -20,18 +20,12 @@ else:
     from typing import Annotated, get_args, get_origin, get_type_hints
 
 import annotated_types as at
-from pydantic_core import ValidationError  # noqa: F401
 from pydantic_core import SchemaValidator
 
 from typeval._constraints import compile_constraints
 
-__all__ = [
-    "ValidationError",
-    "build_validator",
-]
 
-
-def _get_constraints(args: Iterable[Any]) -> Iterator[at.BaseMetadata]:
+def get_constraints(args: Iterable[Any]) -> Iterator[at.BaseMetadata]:
     for arg in args:
         if isinstance(arg, slice):
             start, stop = arg.start, arg.stop
@@ -52,19 +46,19 @@ def _get_constraints(args: Iterable[Any]) -> Iterator[at.BaseMetadata]:
                 yield arg
 
 
-def _unpack_type(tp: type) -> Tuple[type, Iterator[at.BaseMetadata]]:
+def unpack_type(tp: type) -> Tuple[type, Iterator[at.BaseMetadata]]:
     origin = get_origin(tp)
     if origin is not Annotated:
         return (tp, iter(()))
     args = iter(get_args(tp))
     tp = next(args)
-    return (tp, _get_constraints(args))
+    return (tp, get_constraints(args))
 
 
 Schema = Dict[str, Any]
 
 
-_SIMPLE_TYPES: Dict[Any, str] = {
+SIMPLE_TYPES: Dict[Any, str] = {
     int: "int",
     float: "float",
     bool: "bool",
@@ -75,15 +69,15 @@ _SIMPLE_TYPES: Dict[Any, str] = {
 }
 
 
-def _build_schema(
+def build_schema(
     tp: type, seen: Set[type], recursive_containers: Set[type]
 ) -> Mapping[str, Any]:
-    tp, constraints = _unpack_type(tp)
+    tp, constraints = unpack_type(tp)
     schema: Schema = {}
     origin = get_origin(tp)
     schema.update(compile_constraints(constraints))
-    if tp in _SIMPLE_TYPES:
-        schema["type"] = _SIMPLE_TYPES[tp]
+    if tp in SIMPLE_TYPES:
+        schema["type"] = SIMPLE_TYPES[tp]
         return schema
     origin = get_origin(tp)
     if origin is Literal:
@@ -94,7 +88,7 @@ def _build_schema(
         args = get_args(tp)
         if len(args) == 2 and None in args:
             schema["type"] = "optional"
-            schema["schema"] = _build_schema(
+            schema["schema"] = build_schema(
                 next(iter(arg for arg in args if arg is not None)),
                 seen,
                 recursive_containers,
@@ -103,13 +97,13 @@ def _build_schema(
         else:
             schema["type"] = "union"
             schema["choices"] = [
-                _build_schema(tp_arg, seen, recursive_containers)
+                build_schema(tp_arg, seen, recursive_containers)
                 for tp_arg in get_args(tp)
             ]
             return schema
     elif isinstance(origin, type) and issubclass(origin, List):
         schema["type"] = "list"
-        schema["items"] = _build_schema(
+        schema["items_schema"] = build_schema(
             next(iter(get_args(tp))), seen, recursive_containers
         )
         if "min_length" in schema:
@@ -118,7 +112,7 @@ def _build_schema(
             schema["max_items"] = schema.pop("max_length")
     elif isinstance(origin, type) and issubclass(origin, Set):
         schema["type"] = "set"
-        schema["items"] = _build_schema(
+        schema["items_schema"] = build_schema(
             next(iter(get_args(tp))), seen, recursive_containers
         )
         if "min_length" in schema:
@@ -128,8 +122,8 @@ def _build_schema(
     elif isinstance(origin, type) and issubclass(origin, Dict):
         schema["type"] = "dict"
         keys, values = get_args(tp)
-        schema["keys"] = _build_schema(keys, seen, recursive_containers)
-        schema["values"] = _build_schema(values, seen, recursive_containers)
+        schema["keys_schema"] = build_schema(keys, seen, recursive_containers)
+        schema["values_schema"] = build_schema(values, seen, recursive_containers)
         if "min_length" in schema:
             schema["min_items"] = schema.pop("min_length")
         if "max_length" in schema:
@@ -141,27 +135,24 @@ def _build_schema(
         if tp in seen:
             recursive_containers.add(tp)
             schema["type"] = "recursive-ref"
-            schema["name"] = str(id(tp))
+            schema["schema_ref"] = str(id(tp))
             return schema
         seen.add(tp)
         schema["type"] = "model-class"
-        schema["model"] = {
-            "type": "model",
+        schema["schema"] = {
+            "type": "typed-dict",
+            "return_fields_set": True,
             "fields": {
-                k: _build_schema(v, seen, recursive_containers)
+                k: {"schema": build_schema(v, seen, recursive_containers)}
                 for k, v in get_type_hints(tp, include_extras=True).items()
             },
         }
         schema["class_type"] = tp
         if tp in recursive_containers:
-            schema = {
-                "type": "recursive-container",
-                "name": str(id(tp)),
-                "schema": schema,
-            }
+            schema["ref"] = str(id(tp))
     return schema
 
 
-def build_validator(tp: type) -> SchemaValidator:
-    schema = _build_schema(tp, set(), set())
+def build_validator(tp: Any) -> SchemaValidator:
+    schema = build_schema(tp, set(), set())
     return SchemaValidator(dict(schema))  # type: ignore[arg-type]

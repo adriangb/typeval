@@ -4,7 +4,7 @@ from typing import Annotated, Any, Dict, List, Optional, Set, Union
 import annotated_types as at
 import pytest
 
-from typeval import ValidationError, build_validator
+from typeval import ValidationError, Validator
 
 
 def test_scalars() -> None:
@@ -15,7 +15,7 @@ def test_scalars() -> None:
         a_bool: bool
         a_none: None
 
-    validator = build_validator(MyModel)
+    validator = Validator(MyModel)
     assert validator.validate_python(
         {"a_float": 1, "an_int": 0, "a_bool": "True", "a_none": None}
     ) == MyModel(1.0, 0, True, None)
@@ -27,7 +27,7 @@ def test_any() -> None:
         any_scalar: Any
         any_list: List[Any]
 
-    validator = build_validator(MyModel)
+    validator = Validator(MyModel)
     o = object()
     assert validator.validate_python({"any_scalar": o, "any_list": [o]}) == MyModel(
         o, [o]
@@ -41,7 +41,7 @@ def test_list() -> None:
     class MyModel:
         a_list: Annotated[List[float], at.Len(1, 10)]
 
-    validator = build_validator(MyModel)
+    validator = Validator(MyModel)
     assert validator.validate_python({"a_list": [1]}) == MyModel([1.0])
     with pytest.raises(ValidationError):
         validator.validate_python({"a_list": list(range(20))})
@@ -52,7 +52,7 @@ def test_set() -> None:
     class MyModel:
         a_set: Annotated[Set[float], at.Len(1, 10)]
 
-    validator = build_validator(MyModel)
+    validator = Validator(MyModel)
     assert validator.validate_python({"a_set": [1, 1, 1.1]}) == MyModel({1.0, 1.1})
     with pytest.raises(ValidationError):
         validator.validate_python({"a_set": list(range(20))})
@@ -63,7 +63,7 @@ def test_dict() -> None:
     class MyModel:
         a_dict: Annotated[Dict[int, int], at.Len(1, 10)]
 
-    validator = build_validator(MyModel)
+    validator = Validator(MyModel)
     assert validator.validate_python({"a_dict": {1: 123}}) == MyModel({1: 123})
     with pytest.raises(ValidationError):
         validator.validate_python({"a_dict": {"not a num": 123}})
@@ -80,7 +80,7 @@ def test_union() -> None:
             Annotated[int, at.Ge(0), at.Lt(100)], Annotated[float, at.Ge(100)]
         ]
 
-    validator = build_validator(MyModel)
+    validator = Validator(MyModel)
     assert validator.validate_python({"a_union": 101}) == MyModel(101.0)
     assert validator.validate_python({"a_union": 99}) == MyModel(99)
 
@@ -91,7 +91,7 @@ class RecursiveModel:
 
 
 def test_recursive() -> None:
-    validator = build_validator(RecursiveModel)
+    validator = Validator(RecursiveModel)
     assert validator.validate_python({"inner": []}) == RecursiveModel([])
     assert validator.validate_python({"inner": [{"inner": []}]}) == RecursiveModel(
         [RecursiveModel([])]
@@ -119,7 +119,7 @@ def test_nested_validators() -> None:
             at.Len(1, 2),
         ]
 
-    validator = build_validator(MyModel)
+    validator = Validator(MyModel)
     assert validator.validate_python(
         {"a_strange_list": [{1: "foo"}, {2: "foo"}]}
     ) == MyModel([{1.0: "foo"}, {2.0: "foo"}])
@@ -147,6 +147,6 @@ def test_validation_failure() -> None:
     class MyModel:
         foo: Annotated[str, at.Len(1)]
 
-    validator = build_validator(MyModel)
+    validator = Validator(MyModel)
     with pytest.raises(ValidationError):
         validator.validate_python({"foo": ""})

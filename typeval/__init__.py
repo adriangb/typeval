@@ -1,6 +1,8 @@
-from typeval._builder import ValidationError, build_validator
+from pydantic_core import ValidationError  # noqa: F401
+
+from typeval._validator import Validator
 
 __all__ = (
-    "build_validator",
+    "Validator",
     "ValidationError",
 )
