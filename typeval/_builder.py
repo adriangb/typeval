@@ -153,6 +153,6 @@ def build_schema(
     return schema
 
 
-def build_validator(tp: Any) -> SchemaValidator:
+def build_validator(tp: type) -> SchemaValidator:
     schema = build_schema(tp, set(), set())
     return SchemaValidator(dict(schema))  # type: ignore[arg-type]
