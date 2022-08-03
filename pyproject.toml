@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "typeval"
-version = "0.1.0"
+version = "0.1.1"
 description = "Prototype of annotated-types + pydantic-core"
 authors = ["Adrian Garcia Badaracco <1755071+adriangb@users.noreply.github.com>"]
 license = "MIT"
