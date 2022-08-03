@@ -138,7 +138,7 @@ def build_schema(
             schema["schema_ref"] = str(id(tp))
             return schema
         seen.add(tp)
-        schema["type"] = "model-class"
+        schema["type"] = "new-class"
         schema["schema"] = {
             "type": "typed-dict",
             "return_fields_set": True,
